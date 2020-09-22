@@ -1,3 +1,4 @@
+//? 배열에 객체 담는 예제
 var cars = [];
 var car01 = {
     name: "sonata",
