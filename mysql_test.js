@@ -2,7 +2,7 @@ var mysql = require("mysql");
 var connection = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "Kjw15915!@",
+    password: "*******",
     database: "fintech", // 데이터베이스 (스키마)
 });
 
