@@ -2,14 +2,14 @@ var mysql = require("mysql");
 var connection = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "*******",
+    password: "kjw15915",
     database: "fintech", // 데이터베이스 (스키마)
 });
 
 connection.connect();
 connection.query("SELECT * FROM user", function (error, results, fields) {
     if (error) throw error;
-    console.log("The solution is: ", results[0].solution);
+    console.log("The name is: ", results[0].name);
 });
 
 connection.end();
