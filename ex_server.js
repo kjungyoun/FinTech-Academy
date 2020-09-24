@@ -2,13 +2,16 @@ const express = require("express");
 const app = express();
 const path = require("path");
 const request = require("request");
+var jwt = require("jsonwebtoken"); //암호화된 토큰을 사용하기 위한 모듈
+var tokenKey = "1dksjf3324!#2wqjfajdf^$";
+var auth = require("./lib/auth");
 
 //MYSQL 커넥터 추가
 var mysql = require("mysql");
 var connection = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "kjw15915",
+    password: "*******",
     database: "fintech", // 데이터베이스 (스키마)
 });
 
@@ -31,6 +34,14 @@ app.get("/signup", function (req, res) {
     res.render("signup");
 });
 
+app.get("/login", (req, res) => {
+    res.render("login");
+});
+
+app.get("/authText", auth, function (req, res) {
+    res.json("당신은 콘텐츠 접근에 성공했습니다.");
+});
+
 app.get("/authResult", function (req, res) {
     var authCode = req.query.code;
     console.log(authCode);
@@ -44,8 +55,8 @@ app.get("/authResult", function (req, res) {
         //form 형태는 form / 쿼리스트링 형태는 qs / json 형태는 json ***
         form: {
             code: authCode,
-            client_id: "H18thNyY8r0KNlfQdY1Q16LEJhSwX98N1BjvkGc4",
-            client_secret: "OjrfnBwn2XtHzkAafYcyH8nXHCoYHZSQuWjWFa3h",
+            client_id: "API Key",
+            client_secret: "API Secret Key",
             redirect_uri: "http://localhost:3000/authResult",
             grant_type: "authorization_code",
             //본인 키로 시크릿 변경
@@ -77,6 +88,46 @@ app.post("/signup", function (req, res) {
             }
         }
     );
+});
+
+app.post("/login", (req, res) => {
+    var userEmail = req.body.userEmail;
+    var userPassword = req.body.userPassword;
+    console.log(userEmail, userPassword);
+    connection.query("SELECT * FROM user WHERE email =?", [userEmail], (error, results, fields) => {
+        if (error) throw error;
+        else {
+            if (results.length == 0) {
+                // 이메일이 없으면
+                res.json(2);
+            } else {
+                var storedPassword = results[0].password;
+                if (storedPassword == userPassword) {
+                    // 패스워드가 동일하면
+                    //로그인 성공
+                    //jwt 토큰 발행하기 -- jwt: 특정한 string을 특정한 규칙으로 암호화 해주는 기능이 있음
+                    jwt.sign(
+                        {
+                            userId: results[0].id,
+                            userEmail: results[0].email,
+                        },
+                        tokenKey,
+                        {
+                            expiresIn: "1d", //토큰이 유효한 시간
+                            issuer: "fintech.admin",
+                            subject: "user.login.info",
+                        },
+                        function (err, token) {
+                            console.log("로그인 성공", token);
+                            res.json(token);
+                        }
+                    );
+                } else {
+                    res.json("로그인 실패");
+                }
+            }
+        }
+    });
 });
 
 app.listen(3000);
