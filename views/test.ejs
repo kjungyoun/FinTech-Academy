@@ -10,11 +10,13 @@
         $("#sendButton").click(function(){
             var inputText =  $("#inputText").val();  // #은 이 아이디에 해당하는걸 가져옴. val은 데이터를 가져와라라는 의미
             $.ajax({
-            url:'/',
-            type : 'POST',
+            url:"/getDataTest", //데이터를 보내고 어떤 url로 연결할 지 명시
+            type : "POST",
             data : {
+                userText : inputText //데이터 이름과 내용 명시
             },
-            success:function(data){
+            success:function(data){ // 성공적으로 응답을 받으면 응답을 처리하는 기능
+                alert(data);
             }
         })
         });
