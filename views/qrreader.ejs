@@ -141,10 +141,8 @@
                 <!-- Page content start -->
                 <main>
                     <div class="container">
-                        <div class="form-divider"></div>
                         <video id="preview"></video>
-
-                        <!-- qr코드 리더 렌더링 부분 -->
+                        <button class="button circle darkblue block" data-popup="largePopup">Large Popup</button>
                     </div>
 
                     <div class="form-divider"></div>
@@ -173,6 +171,31 @@
             </div>
         </div>
 
+        <div class="popup-overlay" id="largePopup">
+            <!-- if you dont want overlay add class .no-overlay -->
+            <div class="popup-container">
+                <div class="popup-header">
+                    <h3 class="popup-title">결제 금액 / 계좌 선택</h3>
+                    <span class="popup-close" data-dismiss="true"><i class="fa fa-times"></i></span>
+                </div>
+                <div class="popup-content">
+                    결제금액 : <input type="text" id="amount" /> 원
+                    <table>
+                        <thead>
+                            <th>번호</th>
+                            <th>계좌별명</th>
+                            <th>결제 버튼</th>
+                        </thead>
+                        <tbody id="accountList"></tbody>
+                    </table>
+                </div>
+                <div class="popup-footer">
+                    <button class="button orange">Save</button>
+                    <button class="button" data-dismiss="true">Cancel</button>
+                </div>
+            </div>
+        </div>
+
         <!--Page loader DOM Elements. Requared all pages-->
         <div class="sweet-loader">
             <div class="box">
@@ -181,23 +204,48 @@
                 <div class="circle3"></div>
             </div>
         </div>
-
         <!-- JQuery library file. requared all pages -->
         <script src="js/jquery-3.2.1.min.js"></script>
-
         <!-- Template global script file. requared all pages -->
         <script src="js/global.script.js"></script>
-
-        <!-- qr코드 라이브러리 로드 -->
-        <script type="text/javascript" src="js/instascan.min.js"></script>
+        <script src="js/instascan.min.js"></script>
         <script>
+            var jwtToken = sessionStorage.getItem("ourToken");
             let scanner = new Instascan.Scanner({
                 video: document.getElementById("preview"),
             });
+            var to_fin_use_num = undefined; // qr 코드로 부터 읽은 핀테크 번호
             scanner.addListener("scan", function (content) {
                 console.log(content);
+                to_fin_use_num = content;
+                $("#largePopup").show();
+                $.ajax({
+                    url: "/list",
+                    type: "POST",
+                    headers: {
+                        ourtoken: jwtToken,
+                    },
+                    success: function (data) {
+                        console.log(data.res_list);
+                        for (var i = 0; i < data.res_list.length; i++) {
+                            var element = data.res_list[i];
+                            console.log(element);
+                            $("#accountList").append(
+                                "<tr><td>" +
+                                    (i + 1) +
+                                    "</td><td>" +
+                                    element.account_alias +
+                                    "</td><td>" +
+                                    "<button onclick=\"pay('" +
+                                    element.fintech_use_num +
+                                    "')\">결제하기</button>" +
+                                    "</td></tr>"
+                            );
+                        }
+                    },
+                });
             });
-            Instascan.Camera.getCameras() // 카메라를 사용하는 것
+            Instascan.Camera.getCameras()
                 .then(function (cameras) {
                     if (cameras.length > 0) {
                         scanner.start(cameras[0]);
@@ -208,6 +256,25 @@
                 .catch(function (e) {
                     console.error(e);
                 });
+            function pay(useFintechNo) {
+                console.log("내가선택한 계좌의 핀테크 번호 :", useFintechNo);
+                console.log("내가 이체하는 대상의 계좌 핀테크 번호 :", to_fin_use_num);
+                $.ajax({
+                    url: "/withdraw",
+                    type: "POST",
+                    headers: {
+                        ourtoken: jwtToken,
+                    },
+                    data: {
+                        fin_use_num: useFintechNo,
+                        to_fin_use_num: to_fin_use_num,
+                        amount: $("#amount").val(),
+                    },
+                    success: function (data) {
+                        console.log(data);
+                    },
+                });
+            }
         </script>
     </body>
 </html>

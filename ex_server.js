@@ -254,6 +254,90 @@ app.post("/transactionlist", auth, (req, res) => {
     });
 });
 
-app.post("/withdraw", (req, res) => {});
+//Todo: QR스캔을 이용한 출금 이체 기능
+app.post("/withdraw", auth, (req, res) => {
+    var userId = req.decoded.userId;
+    var countnum = Math.floor(Math.random() * 1000000000) + 1; // 은행 고유 이용 번호 로직
+    var countnum2 = Math.floor(Math.random() * 1000000000) + 1; // 은행 고유 이용 번호 로직
+    var transId = "T991659630U" + countnum; //이용기관번호 본인 것 입력
+    var transId2 = "T991659630U" + countnum2;
+    var finusenum = req.body.fin_use_num;
+    var reqFinusenum = req.body.to_fin_use_num;
+    var amount = req.body.amount;
+    connection.query("Select * from user where id = ?", [userId], (error, results) => {
+        if (error) throw error;
+        else {
+            console.log("list에서 조회한 개인 값: ", results);
+            var option = {
+                url: "https://testapi.openbanking.or.kr/v2.0/transfer/withdraw/fin_num",
+                method: "POST",
+                headers: {
+                    Authorization: "Bearer " + results[0].accesstoken,
+                    "Content-Type": "application/json",
+                },
+                //Json 형태이므로 json 형식으로 데이터를 보낸다.
+                json: {
+                    bank_tran_id: transId,
+                    cntr_account_type: "N",
+                    cntr_account_num: "2982752854",
+                    dps_print_content: "구매",
+                    fintech_use_num: finusenum,
+                    wd_print_content: "맥북 구매",
+                    tran_amt: amount,
+                    tran_dtime: "20200925112000",
+                    req_client_name: "깜이",
+                    req_client_fintech_use_num: reqFinusenum,
+                    req_client_num: "1100763470",
+                    transfer_purpose: "ST",
+                    recv_client_name: "김정윤",
+                    recv_client_bank_code: "097",
+                    recv_client_account_num: "555555555555",
+                },
+            };
+            request(option, (err, response, body) => {
+                console.log(body);
+            });
+            /**
+             * @description 입금 이체 기능 만들기
+             */
+            var option = {
+                url: "https://testapi.openbanking.or.kr/v2.0/transfer/deposit/fin_num",
+                method: "POST",
+                headers: {
+                    Authorization:
+                        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJUOTkxNjU5NjMwIiwic2NvcGUiOlsib29iIl0sImlzcyI6Imh0dHBzOi8vd3d3Lm9wZW5iYW5raW5nLm9yLmtyIiwiZXhwIjoxNjA4Nzg2Nzg0LCJqdGkiOiJmZTM2YmY2ZC1hMDYxLTQ4NGQtOWMxNi0xMzBlYTJkMWUzMjYifQ.kZKg4xBABS-ZGpn8t1t6QwfKLdhOC4-aIHfGYPbW9Ns",
+                    // 2-legged token으로 변경해야함
+                    "Content-Type": "application/json",
+                },
+                json: {
+                    cntr_account_type: "N",
+                    cntr_account_num: "5639064053",
+                    wd_pass_phrase: "NONE",
+                    wd_print_content: "환불금액",
+                    name_check_option: "on",
+                    tran_dtime: "20200925150000",
+                    req_cnt: "1",
+                    req_list: [
+                        {
+                            tran_no: "1",
+                            bank_tran_id: transId2,
+                            fintech_use_num: reqFinusenum,
+                            print_content: "쇼핑몰환불",
+                            tran_amt: amount,
+                            req_client_name: "홍길동",
+                            req_client_fintech_use_num: finusenum,
+                            req_client_num: "1100763470",
+                            transfer_purpose: "ST",
+                        },
+                    ],
+                },
+            };
+            request(option, (err, response, body) => {
+                console.log(body);
+                res.json(1);
+            });
+        }
+    });
+});
 
 app.listen(3000);
