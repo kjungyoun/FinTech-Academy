@@ -4,7 +4,7 @@ const path = require("path");
 const request = require("request");
 var jwt = require("jsonwebtoken"); //암호화된 토큰을 사용하기 위한 모듈
 var tokenKey = "1dksjf3324!#2wqjfajdf^$";
-var auth = require("./lib/auth");
+var auth = require("./lib/auth"); // auth 미들웨어 등록
 
 //Todo: MYSQL 커넥터 추가
 var mysql = require("mysql");
@@ -51,6 +51,10 @@ app.get("/qrcode", (req, res) => {
     res.render("qrcode");
 });
 
+app.get("/qrreader", (req, res) => {
+    res.render("qrreader");
+});
+
 app.get("/authText", auth, function (req, res) {
     res.json("당신은 콘텐츠 접근에 성공했습니다.");
 });
@@ -82,7 +86,7 @@ app.get("/authResult", function (req, res) {
         res.render("resultChild", { data: accessRequestResult });
     });
 });
-//Todo: 회원가입 페이지 로직 구현
+//Todo: ajax에서 보낸 데이터를 데이터베이스에 저장
 app.post("/signup", function (req, res) {
     var userName = req.body.userName;
     var userEmail = req.body.userEmail;
@@ -249,5 +253,7 @@ app.post("/transactionlist", auth, (req, res) => {
         });
     });
 });
+
+app.post("/withdraw", (req, res) => {});
 
 app.listen(3000);
